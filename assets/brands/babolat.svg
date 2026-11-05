@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 54" role="img" aria-labelledby="title">
+  <title id="title">Babolat</title>
+  <circle cx="24" cy="27" r="19" fill="none" stroke="#252921" stroke-width="4"/>
+  <path d="M16 34c3-10 14-17 19-9 5 7-5 16-13 12-9-5-2-19 9-21" fill="none" stroke="#d4b52a" stroke-width="4" stroke-linecap="round"/>
+  <text x="54" y="38" fill="#252921" font-family="Arial,sans-serif" font-size="27" font-weight="700" letter-spacing=".4">BABOLAT</text>
+</svg>

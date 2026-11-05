@@ -1,0 +1,50 @@
+.admin-page{background:#f4f5f1;min-height:100vh}
+.admin-header{height:78px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 6%}
+.admin-main{max-width:1450px;margin:0 auto;padding:52px 6% 100px}
+.admin-login{max-width:430px;margin:8vh auto;background:white;padding:38px;box-shadow:0 12px 40px #17211e0c}
+.admin-login h1,.admin-heading h1{font:600 clamp(38px,5vw,58px)/.98 var(--display);letter-spacing:-.06em;margin:19px 0 12px}
+.admin-login h1 span,.admin-heading h1 span{color:#87938b}
+.admin-login p,.panel-heading p{font-size:12px;line-height:1.7;color:var(--muted)}
+.admin-login form{display:grid;gap:10px;margin-top:24px}
+.admin-login label,.admin-form-grid label{font-size:10px;font-weight:600;display:grid;gap:6px}
+.admin-login input,.admin-form-grid input,.admin-form-grid select,.admin-order-card input,.admin-order-card select,.admin-order-card textarea{min-width:0;padding:11px 12px;border:1px solid var(--line);background:white;font:11px var(--body)}
+.admin-login .button{margin-top:8px}
+.admin-heading{display:flex;align-items:center;justify-content:space-between}
+.admin-tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin:38px 0 28px}
+.admin-tab{border:0;border-bottom:2px solid transparent;background:none;padding:0 2px 12px;color:#77817a;font-size:12px;cursor:pointer}
+.admin-tab.active{border-color:var(--ink);color:var(--ink);font-weight:700}
+.panel-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:20px}
+.panel-heading h2{font:600 24px var(--display);margin:0}
+.panel-heading p{margin:5px 0 0}
+.button-outline{background:transparent;border:1px solid #bfc6bf;color:var(--ink)}
+.button-outline span{color:#79923e}
+.product-form{padding:21px;background:white;border:1px solid var(--line);margin:0 0 21px}
+.product-form h3{font:600 16px var(--display);margin:0 0 17px}
+.admin-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.admin-form-grid .wide-field{grid-column:span 2}
+.admin-form-grid .active-toggle{display:flex;align-items:center;gap:8px}
+.admin-form-grid .active-toggle input{width:auto}
+.form-actions{display:flex;gap:10px;margin-top:18px}
+.admin-table-wrap{overflow:auto;background:white;border:1px solid var(--line)}
+.admin-table{width:100%;border-collapse:collapse;min-width:760px;text-align:left}
+.admin-table th,.admin-table td{padding:12px 14px;border-bottom:1px solid #eef0ec;font-size:10px}
+.admin-table th{color:#747e77;font-weight:600;background:#fbfcf9}
+.admin-table td:first-child strong,.admin-table td:first-child span{display:block}
+.admin-table td:first-child strong{font:600 12px var(--display)}
+.admin-table td:first-child span{font-size:9px;color:#89918b;margin-top:4px}
+.admin-table .edit-product{border:0;background:#eef0e9;padding:7px 10px;font-size:9px;cursor:pointer}
+.admin-state{font-size:9px;color:#69736c}
+.admin-orders{display:grid;gap:14px}
+.admin-order-card{background:white;border:1px solid var(--line);padding:19px}
+.admin-order-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.admin-order-head h3{font:600 14px var(--display);margin:0 0 5px}
+.admin-order-head p,.admin-order-items{font-size:10px;line-height:1.65;color:#77817a;margin:0}
+.admin-order-status{font-size:9px;background:#e6efce;color:#526525;border-radius:20px;padding:5px 9px}
+.admin-order-items{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.tracking-update-form{display:grid;grid-template-columns:160px 1fr 1.4fr auto;gap:8px;margin-top:14px}
+.tracking-update-form button{white-space:nowrap;padding:10px 12px}
+#adminMessage,#adminLoginMessage{min-height:18px;font-size:11px;color:#738039}
+.admin-toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:white;padding:12px 19px;font-size:11px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#adminToast.visible{opacity:1;transform:translate(-50%,0)}
+@media(max-width:850px){.admin-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tracking-update-form{grid-template-columns:1fr 1fr}.tracking-update-form button{grid-column:span 2}}
+@media(max-width:600px){.admin-header{padding:0 5%;height:64px}.admin-main{padding:34px 5% 70px}.admin-login{padding:27px 22px}.admin-heading{align-items:flex-start;gap:12px}.admin-heading h1{font-size:37px}.panel-heading{align-items:flex-start;flex-direction:column}.admin-form-grid{grid-template-columns:1fr}.admin-form-grid .wide-field{grid-column:auto}.tracking-update-form{grid-template-columns:1fr}.tracking-update-form button{grid-column:auto}}

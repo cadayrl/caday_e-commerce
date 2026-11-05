@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#17211e">
+    <title>Shop Admin — Caday Badminton</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="desktop.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin.js" defer></script>
+  </head>
+  <body class="admin-page">
+    <header class="admin-header">
+      <a class="brand" href="/"><img class="brand-logo" src="logo.svg" alt=""><span>CADAY<span class="brand-light">ADMIN</span></span></a>
+      <a class="underlined-link" href="/">View storefront <span>↗</span></a>
+    </header>
+    <main class="admin-main">
+      <section id="adminLogin" class="admin-login">
+        <div class="eyebrow"><span class="eyebrow-line"></span> PRIVATE SHOP MANAGEMENT</div>
+        <h1>Admin <span>sign in.</span></h1>
+        <p>Sign in using a Supabase account that has been granted the admin role.</p>
+        <form id="adminLoginForm">
+          <label for="adminEmail">Admin email</label><input id="adminEmail" type="email" autocomplete="username" required>
+          <label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+          <button class="button button-dark" type="submit">Sign in <span>→</span></button>
+        </form>
+        <p id="adminLoginMessage" role="status"></p>
+      </section>
+      <section id="adminDashboard" hidden>
+        <div class="admin-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> CADAY BADMINTON</div><h1>Shop <span>dashboard.</span></h1></div><button id="adminSignOut" class="button button-outline" type="button">Sign out</button></div>
+        <div class="admin-tabs"><button type="button" class="admin-tab active" data-admin-tab="products">Products & stock</button><button type="button" class="admin-tab" data-admin-tab="orders">Orders & tracking</button></div>
+        <section id="productsPanel">
+          <div class="panel-heading"><div><h2>Products & inventory</h2><p>Update product details, pricing, availability, and stock.</p></div><button class="button button-dark" id="newProductButton" type="button">Add product <span>+</span></button></div>
+          <form id="productForm" class="product-form" hidden>
+            <h3 id="productFormTitle">Add product</h3>
+            <input id="productId" type="hidden">
+            <div class="admin-form-grid">
+              <label>Product ID<input id="productIdInput" required pattern="[a-z0-9][a-z0-9-]{2,63}" placeholder="yonex-racket-model"></label>
+              <label>Product name<input id="productName" required maxlength="120"></label>
+              <label>Brand<select id="productBrand" required><option>Yonex</option><option>Victor</option><option>Li-Ning</option><option>Babolat</option><option>Kawasaki</option></select></label>
+              <label>Category<select id="productCategory" required><option>Rackets</option><option>Shuttlecocks</option><option>Shoes</option><option>Strings</option><option>Apparel</option><option>Accessories</option></select></label>
+              <label>Price (PHP)<input id="productPrice" type="number" min="1" step="1" required></label>
+              <label>Stock<input id="productStock" type="number" min="0" step="1" required></label>
+              <label class="wide-field">Image URL<input id="productImage" type="url" required placeholder="https://..."></label>
+              <label class="active-toggle"><input id="productActive" type="checkbox" checked> Visible in storefront</label>
+            </div>
+            <div class="form-actions"><button class="button button-dark" type="submit">Save product <span>→</span></button><button class="button button-outline" id="cancelProduct" type="button">Cancel</button></div>
+          </form>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="adminProducts"></tbody></table></div>
+        </section>
+        <section id="ordersPanel" hidden>
+          <div class="panel-heading"><div><h2>Orders & tracking</h2><p>Add shipment updates from the shop or carrier.</p></div><button class="button button-outline" id="refreshOrders" type="button">Refresh orders ↻</button></div>
+          <div id="adminOrders" class="admin-orders"></div>
+        </section>
+        <p id="adminMessage" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <div class="toast" id="adminToast" role="status" aria-live="polite"></div>
+  </body>
+</html>

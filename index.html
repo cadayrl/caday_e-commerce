@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f5f2">
+    <meta name="description" content="Badminton rackets, shoes, jerseys, shuttlecocks, strings and court essentials from Caday Badminton.">
+    <title>Caday Badminton — Your game, your court.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://upload.wikimedia.org">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="desktop.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="catalog.js?v=20261105-lining-a300-photo" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="announcement">FREE SHIPPING ON ORDERS OVER ₱2,500 <span>—</span> YOUR LOCAL BADMINTON SHOP · PINAMALOY, DON CARLOS, BUKIDNON</div>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Caday Badminton home"><img class="brand-logo" src="logo.svg" alt=""><span>CADAY<span class="brand-light">BADMINTON</span></span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#shop">Shop all</a>
+        <a href="#shop" data-category-link="Rackets">Rackets</a>
+        <a href="#shop" data-category-link="Shuttlecocks">Shuttlecocks</a>
+        <a href="#shop" data-category-link="Shoes">Shoes</a>
+        <a href="#shop" data-category-link="Strings">Strings</a>
+        <a href="#shop" data-category-link="Apparel">Apparel</a>
+        <a href="#shop" id="trackNav">Track order</a>
+        <a href="#brands">Brands</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button search-toggle" aria-label="Search products" title="Search">⌕</button>
+        <button class="text-button" id="trackButton">Track order</button>
+        <button class="text-button" id="accountButton">Sign in</button>
+        <button class="cart-button" id="cartButton" aria-label="Open shopping bag">BAG <span id="cartCount">0</span></button>
+        <button class="menu-button" id="menuButton" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR BADMINTON SPECIALIST</div>
+          <h1>Own the<br><span>next rally.</span></h1>
+          <p>Find your next racket, fresh shuttlecocks, court-ready shoes, and the little details that make every rally yours.</p>
+          <a class="button button-dark" href="#shop">Shop badminton gear <span>↗</span></a>
+          <div class="hero-note"><span class="note-stars">★★★★★</span> <strong>Made for players</strong> in Pinamaloy and beyond</div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-image" style="background-image:url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1400&q=85')" role="img" aria-label="Badminton racket and shuttlecock"></div>
+          <div class="hero-sticker"><span>MADE FOR</span><strong>YOUR<br>NEXT RALLY</strong><span>EST. 2024</span></div>
+          <div class="hero-caption">01 / BUILT AROUND BADMINTON</div>
+        </div>
+        <div class="hero-index">01 — 04</div>
+      </section>
+
+      <section class="trust-strip" aria-label="Store benefits">
+        <span>★★★★★ <strong>PLAYER APPROVED</strong></span><span>↗ FREE SHIPPING ₱2,500+</span><span>↻ 30-DAY EASY RETURNS</span><span>⌖ PINAMALOY, DON CARLOS, BUKIDNON</span>
+      </section>
+
+      <section class="shop-section" id="shop">
+        <div class="section-top">
+          <div><div class="eyebrow"><span class="eyebrow-line"></span> ONE SPORT. ALL YOUR GEAR.</div><h2>Ready for<br><span>the rally.</span></h2></div>
+          <p>Shop rackets, shuttlecocks, strings, footwear, apparel, and accessories—all for badminton.</p>
+        </div>
+        <div class="shop-toolbar">
+          <div class="category-tabs" role="group" aria-label="Filter by category">
+            <button class="category-tab active" data-category="All">All badminton gear <span>75</span></button>
+            <button class="category-tab" data-category="Rackets">Rackets</button>
+            <button class="category-tab" data-category="Shuttlecocks">Shuttlecocks</button>
+            <button class="category-tab" data-category="Shoes">Shoes</button>
+            <button class="category-tab" data-category="Strings">Strings</button>
+            <button class="category-tab" data-category="Apparel">Apparel</button>
+            <button class="category-tab" data-category="Accessories">Accessories</button>
+          </div>
+          <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Find your gear..." aria-label="Search products"></label>
+        </div>
+        <div class="brand-filter" id="brands" aria-label="Filter by brand">
+          <span class="brand-filter-label">SHOP BY BRAND</span>
+          <button class="brand-chip active" type="button" data-brand="All"><span class="all-brands-mark">CB</span> All brands <span class="brand-count">75</span></button>
+          <button class="brand-chip" type="button" data-brand="Yonex"><img src="assets/brands/yonex.svg" alt="Yonex brand mark"><span class="brand-count">15</span></button>
+          <button class="brand-chip" type="button" data-brand="Victor"><img src="assets/brands/victor.svg" alt="Victor brand mark"><span class="brand-count">15</span></button>
+          <button class="brand-chip" type="button" data-brand="Li-Ning"><img src="assets/brands/li-ning.svg" alt="Li-Ning brand mark"><span class="brand-count">15</span></button>
+          <button class="brand-chip" type="button" data-brand="Babolat"><img src="assets/brands/babolat.svg" alt="Babolat brand mark"><span class="brand-count">15</span></button>
+          <button class="brand-chip" type="button" data-brand="Kawasaki"><img src="assets/brands/kawasaki.svg" alt="Kawasaki brand mark"><span class="brand-count">15</span></button>
+        </div>
+        <div class="catalog-status"><span id="resultsCount">75 products</span><span>Five brands · 15 products each</span></div>
+        <div class="product-grid" id="productGrid" aria-live="polite"></div>
+        <p class="empty-state" id="emptyState" hidden>No badminton gear found. Try another search or category.</p>
+      </section>
+
+      <section class="manifesto">
+        <div class="manifesto-image" style="background-image:url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1100&q=85')" role="img" aria-label="Badminton racket and shuttlecock"></div>
+        <div class="manifesto-copy"><div class="eyebrow"><span class="eyebrow-line"></span> FROM OUR COURT TO YOURS</div><h2>Play your<br><span>best rally.</span></h2><p>We’re a badminton-first shop based in Pinamaloy, Don Carlos, Bukidnon. Get practical gear and local order updates from a team that loves the game.</p><a href="#shop" class="underlined-link">Find your next setup <span>↗</span></a></div>
+      </section>
+
+      <section class="quality-section">
+        <div class="quality-heading"><div class="eyebrow"><span class="eyebrow-line"></span> GOOD TO GO, EVERY TIME</div><h2>Built on the<br><span>right things.</span></h2></div>
+        <div class="quality-grid">
+          <article><span class="quality-number">01</span><h3>Badminton, all in</h3><p>Rackets, strings, shuttles, footwear, apparel, and court accessories in one focused shop.</p></article>
+          <article><span class="quality-number">02</span><h3>Gear for your level</h3><p>Build a setup for your first practice or fine-tune the equipment you already trust.</p></article>
+          <article><span class="quality-number">03</span><h3>Local order updates</h3><p>Follow demo shipment milestones from Pinamaloy to your door.</p></article>
+        </div>
+      </section>
+
+      <section class="acid-section">
+        <div><div class="eyebrow"><span class="eyebrow-line"></span> CHECKOUT, DONE RIGHT</div><h2>Trust in every<br><span>transaction.</span></h2><p>This prototype models the four ACID principles in its demo order flow. Production-grade guarantees require Supabase transactions and a payment provider.</p></div>
+        <div class="acid-grid">
+          <article><strong>A</strong><h3>Atomicity</h3><p>An order is recorded as one completed operation, or not at all.</p></article>
+          <article><strong>C</strong><h3>Consistency</h3><p>Checkout validates quantities, prices, and a selected payment method.</p></article>
+          <article><strong>I</strong><h3>Isolation</h3><p>Each checkout uses a fixed cart snapshot, separate from later cart edits.</p></article>
+          <article><strong>D</strong><h3>Durability</h3><p>Demo cart and order history persist in this browser after refresh.</p></article>
+        </div>
+      </section>
+
+      <section class="newsletter">
+        <div><div class="eyebrow"><span class="eyebrow-line"></span> GOOD THINGS, OCCASIONALLY</div><h2>Get in the <span>zone.</span></h2><p>New gear, training notes, and a little motivation. No noise.</p></div>
+        <form id="newsletterForm"><label for="newsletterEmail" class="sr-only">Email address</label><input id="newsletterEmail" type="email" placeholder="Your email address" required><button class="button button-dark" type="submit">Count me in <span>↗</span></button></form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand footer-brand" href="#"><img class="brand-logo" src="logo.svg" alt=""><span>CADAY<span class="brand-light">BADMINTON</span></span></a>
+      <span>Badminton gear from Pinamaloy, Don Carlos, Bukidnon.</span><a class="admin-link" href="/admin.html">Shop admin</a><span>© 2026 Caday Badminton</span><a href="#shop">Back to top ↑</a>
+    </footer>
+
+    <div class="overlay" id="overlay" hidden></div>
+    <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping bag" aria-hidden="true">
+      <div class="drawer-header"><div><span class="eyebrow">YOUR PICKS</span><h2>Your bag <span id="drawerCount">(0)</span></h2></div><button class="close-button" data-close aria-label="Close shopping bag">×</button></div>
+      <div class="cart-items" id="cartItems"></div>
+      <div class="cart-empty" id="cartEmpty"><span>◯</span><h3>Your bag's taking a breather.</h3><p>Find something that gets you moving.</p><button class="button button-dark" data-close>Keep shopping <span>↗</span></button></div>
+      <div class="cart-footer" id="cartFooter" hidden>
+        <div class="subtotal-row"><span>Subtotal</span><strong id="subtotal">₱0.00</strong></div>
+        <p class="shipping-note">Shipping and taxes calculated at checkout.</p>
+        <button class="button button-dark checkout-button" id="checkoutButton">Continue to checkout <span>→</span></button>
+        <p class="secure-note">🔒 Secure demo checkout · No real payment is collected</p>
+      </div>
+    </aside>
+
+    <section class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> WELCOME TO CADAY</div>
+      <h2 id="authTitle">Good to have<br><span>you here.</span></h2>
+      <p class="modal-intro" id="authDescription">Sign in or create an account to keep your gear and orders together.</p>
+      <div class="auth-tabs"><button class="auth-tab active" data-auth-mode="login">Sign in</button><button class="auth-tab" data-auth-mode="signup">Create account</button></div>
+      <form id="authForm">
+        <label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <div id="passwordField"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></div>
+        <button class="forgot-link" type="button" id="forgotButton">Forgot password?</button>
+        <button class="button button-dark modal-submit" type="submit" id="authSubmit">Sign in <span>→</span></button>
+      </form>
+      <p class="demo-disclaimer">Without server configuration, this form runs a local demo and does not create an account.</p>
+    </section>
+
+    <section class="modal checkout-modal" id="checkoutModal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> ONE LAST THING</div>
+      <h2 id="checkoutTitle">Checkout <span>demo.</span></h2>
+      <p class="modal-intro">Choose a demo payment method. No payment details or money are collected.</p>
+      <form id="checkoutForm">
+        <label for="checkoutEmail">Email for your order summary</label><input id="checkoutEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <fieldset><legend>Payment method</legend>
+          <label class="payment-option"><input type="radio" name="payment" value="card" checked><span><strong>Credit or debit card</strong><small>Demo selection only — no card details requested</small></span><i>▤</i></label>
+          <label class="payment-option"><input type="radio" name="payment" value="paypal"><span><strong>PayPal</strong><small>Demo selection only — no PayPal connection</small></span><i>P</i></label>
+          <label class="payment-option"><input type="radio" name="payment" value="cash"><span><strong>Cash on delivery</strong><small>Available as a demo option</small></span><i>↗</i></label>
+        </fieldset>
+        <div class="checkout-total"><span>Order total</span><strong id="checkoutTotal">₱0.00</strong></div>
+        <button class="button button-dark modal-submit" type="submit">Place demo order <span>→</span></button>
+      </form>
+    </section>
+
+    <section class="modal racket-modal" id="racketModal" role="dialog" aria-modal="true" aria-labelledby="racketTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> MAKE IT YOURS</div>
+      <h2 id="racketTitle">Build your<br><span>racket setup.</span></h2>
+      <p class="modal-intro">Choose the racket, string tension and grip that feel right for your game.</p>
+      <form id="racketForm">
+        <label for="racketProduct">Racket model</label>
+        <select id="racketProduct" required></select>
+        <label for="racketBrand">Racket brand</label>
+        <select id="racketBrand" required></select>
+        <label for="racketTension">String tension</label>
+        <select id="racketTension" required></select>
+        <label for="racketGrip">Grip size</label>
+        <select id="racketGrip" required><option value="G4">G4 · slightly thicker</option><option value="G5" selected>G5 · standard</option><option value="G6">G6 · thinner</option></select>
+        <label class="stringing-option"><input id="stringingService" type="checkbox"><span>Include professional restringing <strong>+ ₱500</strong></span></label>
+        <button class="button button-dark modal-submit" type="submit">Add custom racket to bag <span>→</span></button>
+      </form>
+      <p class="demo-disclaimer">Tension and grip preferences are order specifications. Confirm availability with the shop before stringing.</p>
+    </section>
+
+    <section class="modal tracking-modal" id="trackingModal" role="dialog" aria-modal="true" aria-labelledby="trackingTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> FOLLOW YOUR SHIPMENT</div>
+      <h2 id="trackingTitle">Track your<br><span>badminton gear.</span></h2>
+      <p class="modal-intro">Enter the tracking number from your order confirmation. Demo shipments start in Pinamaloy, Don Carlos, Bukidnon.</p>
+      <form id="trackingForm" class="tracking-form">
+        <label for="trackingNumber">Tracking number</label>
+        <div class="tracking-input-row"><input id="trackingNumber" type="text" placeholder="e.g. CAD-ABC123" required><button class="button button-dark" type="submit">Track <span>→</span></button></div>
+      </form>
+      <div id="trackingResult" class="tracking-result" aria-live="polite"></div>
+      <p class="demo-disclaimer">Demo tracking only. Connect Supabase and a delivery carrier for live shipment events.</p>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

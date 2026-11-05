@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 54" role="img" aria-labelledby="title">
+  <title id="title">Yonex</title>
+  <g transform="translate(2 3)">
+    <path d="M10 5h17l10 17-11 19H9l-9-17z" fill="#28794b"/>
+    <circle cx="23" cy="14" r="8" fill="#13a7dc"/>
+    <circle cx="11" cy="29" r="8" fill="#13a7dc"/>
+    <path d="M23 22 17 34l13-4 5-10z" fill="#fff"/>
+  </g>
+  <text x="52" y="39" fill="#18251e" font-family="Arial,sans-serif" font-size="31" font-weight="700" letter-spacing="2">YONEX</text>
+</svg>
