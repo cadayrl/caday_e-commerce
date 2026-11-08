@@ -12,6 +12,7 @@ let activeCheckoutSnapshot = null;
 let supabaseClient = null;
 let supabaseConfigured = false;
 let currentUser = null;
+let clientProfile = null;
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
@@ -19,6 +20,7 @@ const productGrid = $("#productGrid");
 const overlay = $("#overlay");
 const cartDrawer = $("#cartDrawer");
 const authModal = $("#authModal");
+const profileModal = $("#profileModal");
 const checkoutModal = $("#checkoutModal");
 
 function readStorage(key, fallback) {
@@ -196,7 +198,9 @@ function closeLayers() {
   overlay.classList.remove("visible");
   cartDrawer.classList.remove("open");
   authModal.classList.remove("open");
+  profileModal.classList.remove("open");
   checkoutModal.classList.remove("open");
+  $("#feedbackModal").classList.remove("open");
   $("#racketModal").classList.remove("open");
   $("#trackingModal").classList.remove("open");
   cartDrawer.setAttribute("aria-hidden", "true");
@@ -205,7 +209,9 @@ function closeLayers() {
     if (!overlay.classList.contains("visible")) {
       overlay.hidden = true;
       authModal.hidden = true;
+      profileModal.hidden = true;
       checkoutModal.hidden = true;
+      $("#feedbackModal").hidden = true;
       $("#racketModal").hidden = true;
       $("#trackingModal").hidden = true;
     }
@@ -214,10 +220,13 @@ function closeLayers() {
 
 function setAuthMode(mode) {
   authMode = mode;
+  $("#authMessage").textContent = "";
   document.querySelectorAll(".auth-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.authMode === mode));
   $("#authTitle").innerHTML = mode === "login" ? "Good to have<br><span>you here.</span>" : "Make room for<br><span>good things.</span>";
   $("#authDescription").textContent = mode === "login" ? "Sign in or create an account to keep your gear and orders together." : "Create an account to keep your gear and orders together.";
   $("#authSubmit").innerHTML = mode === "login" ? "Sign in <span>→</span>" : "Create account <span>→</span>";
+  $("#authNameField").hidden = mode !== "signup";
+  $("#authName").required = mode === "signup";
   $("#passwordField").hidden = false;
   $("#authPassword").required = true;
   $("#forgotButton").hidden = mode !== "login";
@@ -328,33 +337,82 @@ async function refreshSupabaseProducts() {
 }
 
 function updateAccountButton() {
-  $("#accountButton").textContent = currentUser ? "Sign out" : "Sign in";
+  $("#accountButton").textContent = currentUser ? "My account" : "Sign in";
+}
+
+async function loadClientProfile() {
+  const profile = await requestApi("/api/profile");
+  clientProfile = profile;
+  return profile;
+}
+
+async function openClientProfile() {
+  if (!supabaseConfigured || !currentUser) {
+    setAuthMode("login");
+    openLayer(authModal);
+    return;
+  }
+  $("#profileEmail").value = currentUser.email ?? "";
+  $("#profileMessage").textContent = "";
+  $("#profileMessage").classList.remove("is-success");
+  $("#profileName").value = clientProfile?.full_name ?? currentUser.user_metadata?.full_name ?? "";
+  $("#profilePhone").value = clientProfile?.phone ?? currentUser.phone ?? "";
+  $("#profileAddress").value = clientProfile?.delivery_address ?? "";
+  openLayer(profileModal);
+  try {
+    const profile = await loadClientProfile();
+    $("#profileEmail").value = profile.email ?? currentUser.email ?? "";
+    $("#profileName").value = profile.full_name ?? "";
+    $("#profilePhone").value = profile.phone ?? "";
+    $("#profileAddress").value = profile.delivery_address ?? "";
+  } catch (error) {
+    $("#profileMessage").textContent = `Could not load your profile: ${error.message}`;
+  }
 }
 
 async function connectSupabase() {
   try {
     const response = await fetch("/api/config");
-    if (!response.ok) return;
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Configuration request failed (${response.status}).`);
+    }
     const config = await response.json();
-    if (!config.supabaseUrl || !config.anonKey || !window.supabase?.createClient) return;
+    if (!config.supabaseUrl || !config.anonKey || !window.supabase?.createClient) {
+      throw new Error("Supabase authentication is not configured for this website.");
+    }
     supabaseClient = window.supabase.createClient(config.supabaseUrl,config.anonKey);
     supabaseConfigured = true;
     const {data,error} = await supabaseClient.auth.getSession();
     if (error) throw error;
     currentUser = data.session?.user ?? null;
+    clientProfile = null;
     updateAccountButton();
-    $("#authModal .demo-disclaimer").textContent = "Sign-in and account recovery are handled by your configured Supabase project.";
     $("#authModal .demo-disclaimer").textContent = "Sign-in and account recovery are handled by your configured Supabase project.";
     $(".cart-footer .secure-note").textContent = "🔒 Supabase order storage · Payment processing is not configured";
     $("#trackingModal .demo-disclaimer").textContent = "Tracking is customer-authenticated. Admins add shipment scans; live carrier updates require carrier integration.";
     supabaseClient.auth.onAuthStateChange((_event,session) => {
       currentUser = session?.user ?? null;
+      if (!currentUser) clientProfile = null;
       updateAccountButton();
     });
-    await refreshSupabaseProducts();
     document.body.classList.add("supabase-connected");
+    if (currentUser) {
+      try {
+        await loadClientProfile();
+      } catch (error) {
+        showToast(`Your account is signed in, but profile data could not be loaded: ${error.message}`);
+      }
+    }
+    try {
+      await refreshSupabaseProducts();
+    } catch (error) {
+      showToast(`Account sign-in is ready, but shop data could not be loaded: ${error.message}`);
+    }
   } catch (error) {
-    showToast(`Supabase connection issue: ${error.message}`);
+    $("#authMessage").textContent = `Account service unavailable: ${error.message}`;
+    $("#authModal .demo-disclaimer").textContent = "Sign-in is unavailable until valid Supabase project settings are configured.";
+    showToast(`Account service unavailable: ${error.message}`);
   }
 }
 
@@ -382,16 +440,17 @@ $("#cartItems").addEventListener("click", (event) => {
 });
 
 $("#cartButton").addEventListener("click", () => openLayer(cartDrawer));
-$("#accountButton").addEventListener("click", () => {
-  if (currentUser && supabaseClient) {
-    supabaseClient.auth.signOut().then(({error}) => {
-      if (error) return showToast(`Sign out failed: ${error.message}`);
-      currentUser = null;
-      updateAccountButton();
-      showToast("You have signed out.");
-    });
+$("#feedbackButton").addEventListener("click",() => {
+  if (!supabaseConfigured || !currentUser) {
+    setAuthMode("login");
+    openLayer(authModal);
+    showToast("Sign in to send feedback.");
     return;
   }
+  openLayer($("#feedbackModal"));
+});
+$("#accountButton").addEventListener("click", () => {
+  if (currentUser) return openClientProfile();
   setAuthMode("login");
   openLayer(authModal);
 });
@@ -470,45 +529,147 @@ $("#menuButton").addEventListener("click", () => {
 });
 
 document.querySelectorAll(".auth-tab").forEach((tab) => tab.addEventListener("click", () => setAuthMode(tab.dataset.authMode)));
-$("#authForm").addEventListener("submit", (event) => {
+$("#authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = $("#authEmail").value.trim();
+  const fullName = $("#authName").value.trim();
   if (!email) return showToast("Enter a valid email address.");
-  if (supabaseConfigured) {
-    const password = $("#authPassword").value;
-    const operation = authMode === "login"
-      ? supabaseClient.auth.signInWithPassword({email,password})
-      : supabaseClient.auth.signUp({email,password});
-    operation.then(({data,error}) => {
-      if (error) return showToast(`Authentication failed: ${error.message}`);
-      if (authMode === "signup" && !data.session) {
-        showToast("Check your inbox to confirm your new Supabase account.");
-        return;
-      }
-      currentUser = data.user;
-      updateAccountButton();
-      closeLayers();
-      showToast(authMode === "login" ? "Signed in securely with Supabase." : "Your Supabase account is ready.");
-    });
+  if (authMode === "signup" && !fullName) {
+    $("#authName").focus();
+    return showToast("Enter your full name to create an account.");
+  }
+  if (!supabaseConfigured || !supabaseClient) {
+    const message = "Sign-in is unavailable. Configure your Supabase URL and publishable/anon key, then restart the site.";
+    $("#authMessage").textContent = message;
+    showToast(message);
     return;
   }
-  showToast(authMode === "login" ? "Demo sign-in complete. No credentials were sent." : "Demo account flow complete. No account was created.");
-  closeLayers();
+
+  const mode = authMode;
+  const submitButton = $("#authSubmit");
+  $("#authMessage").textContent = "";
+  submitButton.disabled = true;
+  try {
+    const password = $("#authPassword").value;
+    const result = mode === "login"
+      ? await supabaseClient.auth.signInWithPassword({email,password})
+      : await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {emailRedirectTo: location.origin,data:{full_name:fullName}}
+      });
+    if (result.error) throw result.error;
+    if (mode === "signup" && !result.data.session) {
+      $("#authPassword").value = "";
+      const message = "Account created. Check your email to confirm it before signing in.";
+      $("#authMessage").textContent = message;
+      showToast(message);
+      return;
+    }
+    currentUser = result.data.user;
+    updateAccountButton();
+    if (currentUser && result.data.session) {
+      try {
+        await loadClientProfile();
+      } catch (error) {
+        showToast(`Account created, but profile data could not be loaded: ${error.message}`);
+      }
+    }
+    closeLayers();
+    showToast(mode === "login" ? "Signed in securely with Supabase." : "Your Supabase account is ready.");
+  } catch (error) {
+    $("#authMessage").textContent = error.message;
+    showToast(`Authentication failed: ${error.message}`);
+  } finally {
+    submitButton.disabled = false;
+  }
 });
 
 $("#forgotButton").addEventListener("click", () => {
   const email = $("#authEmail").value.trim();
   if (!email) {
-    showToast("Enter your email address to preview password recovery.");
+    showToast("Enter your email address for password recovery.");
     $("#authEmail").focus();
     return;
   }
-  if (supabaseConfigured) {
-    supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:`${location.origin}/reset-password.html`})
-      .then(({error}) => showToast(error ? `Could not send recovery email: ${error.message}` : "If that address has an account, password recovery instructions are on the way."));
+  if (!supabaseConfigured || !supabaseClient) {
+    showToast("Password recovery is unavailable because Supabase is not configured.");
     return;
   }
-  showToast(`Demo recovery message shown for ${email}. No email was sent.`);
+  supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:`${location.origin}/reset-password.html`})
+    .then(({error}) => showToast(error ? `Could not send recovery email: ${error.message}` : "If that address has an account, password recovery instructions are on the way."))
+    .catch((error) => showToast(`Could not send recovery email: ${error.message}`));
+});
+
+$("#profileForm").addEventListener("submit",async (event) => {
+  event.preventDefault();
+  if (!currentUser || !supabaseClient) {
+    $("#profileMessage").textContent = "Sign in to edit your profile.";
+    return;
+  }
+  const button = $("#saveProfileButton");
+  button.disabled = true;
+  $("#profileMessage").textContent = "";
+  $("#profileMessage").classList.remove("is-success");
+  try {
+    const profile = await requestApi("/api/profile",{
+      method:"PATCH",
+      body:JSON.stringify({
+        full_name:$("#profileName").value.trim(),
+        phone:$("#profilePhone").value.trim(),
+        delivery_address:$("#profileAddress").value.trim()
+      })
+    });
+    clientProfile = profile;
+    $("#profileMessage").textContent = "Your profile has been saved.";
+    $("#profileMessage").classList.add("is-success");
+    $("#checkoutName").value = profile.full_name;
+    $("#checkoutPhone").value = profile.phone;
+    $("#checkoutAddress").value = profile.delivery_address;
+  } catch (error) {
+    $("#profileMessage").textContent = `Could not save your profile: ${error.message}`;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("#profileSignOut").addEventListener("click",async () => {
+  const {error} = await supabaseClient.auth.signOut();
+  if (error) {
+    $("#profileMessage").textContent = `Sign out failed: ${error.message}`;
+    return;
+  }
+  currentUser = null;
+  clientProfile = null;
+  updateAccountButton();
+  closeLayers();
+  showToast("You have signed out.");
+});
+
+$("#feedbackForm").addEventListener("submit",async (event) => {
+  event.preventDefault();
+  if (!supabaseConfigured || !currentUser) {
+    showToast("Sign in to send feedback.");
+    return;
+  }
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    await requestApi("/api/feedback",{
+      method:"POST",
+      body:JSON.stringify({
+        rating:Number($("#feedbackRating").value),
+        message:$("#feedbackMessage").value.trim()
+      })
+    });
+    event.currentTarget.reset();
+    closeLayers();
+    showToast("Thanks for sharing your feedback.");
+  } catch (error) {
+    showToast(`Could not send feedback: ${error.message}`);
+  } finally {
+    button.disabled = false;
+  }
 });
 
 $("#checkoutButton").addEventListener("click", () => {
@@ -526,15 +687,22 @@ $("#checkoutButton").addEventListener("click", () => {
     : "Choose a demo payment method. No payment details or money are collected.";
   $("#checkoutForm button[type=submit]").innerHTML = supabaseConfigured ? "Place order <span>→</span>" : "Place demo order <span>→</span>";
   $("#checkoutEmail").value = currentUser?.email ?? "";
+  $("#checkoutName").value = clientProfile?.full_name ?? currentUser?.user_metadata?.full_name ?? currentUser?.user_metadata?.name ?? "";
+  $("#checkoutPhone").value = clientProfile?.phone ?? currentUser?.phone ?? currentUser?.user_metadata?.phone ?? "";
+  $("#checkoutAddress").value = clientProfile?.delivery_address ?? "";
   openLayer(checkoutModal);
 });
 
 $("#checkoutForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const email = $("#checkoutEmail").value.trim();
+  const customerName = $("#checkoutName").value.trim();
+  const customerPhone = $("#checkoutPhone").value.trim();
+  const deliveryAddress = $("#checkoutAddress").value.trim();
   const payment = new FormData(event.currentTarget).get("payment");
   const items = activeCheckoutSnapshot;
-  if (!email || !items?.length || !["card","paypal","cash"].includes(payment)) return showToast("Check your email, bag, and payment selection.");
+  if (!email || !customerName || !customerPhone || !deliveryAddress || !items?.length
+    || !["card","paypal","cash"].includes(payment)) return showToast("Check your contact details, delivery address, bag, and payment selection.");
   const requestedByProduct = new Map();
   for (const item of items) requestedByProduct.set(item.id,(requestedByProduct.get(item.id) ?? 0) + item.quantity);
   if ([...requestedByProduct].some(([id,quantity]) => quantity > (store.stock[id] ?? products.find((product) => product.id === id)?.stock ?? 0))) {
@@ -552,7 +720,13 @@ $("#checkoutForm").addEventListener("submit", (event) => {
     }));
     requestApi("/api/orders",{
       method:"POST",
-      body:JSON.stringify({items:requestItems,payment_method:payment})
+      body:JSON.stringify({
+        items:requestItems,
+        payment_method:payment,
+        customer_name:customerName,
+        customer_phone:customerPhone,
+        delivery_address:deliveryAddress
+      })
     }).then(async (order) => {
       try {
         localStorage.setItem(STORAGE_KEY,JSON.stringify({...store,cart:[]}));

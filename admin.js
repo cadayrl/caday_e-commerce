@@ -1,7 +1,17 @@
 const $ = (selector) => document.querySelector(selector);
 let client = null;
 let sessionToken = null;
+let transactionRows = [];
 let toastTimer;
+
+const paymentStatusLabels = {
+  not_processed:"Not processed",
+  pending:"Pending",
+  processing:"Processing",
+  succeeded:"Succeeded (manual)",
+  failed:"Failed",
+  refunded:"Refunded (manual)"
+};
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g,(character) => ({
@@ -82,6 +92,7 @@ async function loadOrders() {
         <div><h3>${escapeHtml(order.tracking_number)} · ${money(order.total_php)}</h3><p>${escapeHtml(order.origin)} · ${new Date(order.created_at).toLocaleString()}</p></div>
         <span class="admin-order-status">${escapeHtml(order.status)}</span>
       </div>
+      <p class="admin-order-payment">Payment: ${escapeHtml(order.payment_method)} · ${escapeHtml(order.payment_transaction?.status ?? "not recorded; payment is not processed")}</p>
       <p class="admin-order-items">${itemSummary || "No item detail available."}${latestEvent ? `<br>Latest: ${escapeHtml(latestEvent.description)} · ${escapeHtml(latestEvent.location)}` : ""}</p>
       <form class="tracking-update-form" data-tracking-form>
         <select name="status" aria-label="Shipment status"><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="in_transit">In transit</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
@@ -93,16 +104,99 @@ async function loadOrders() {
   }).join("") : "<p>No orders yet.</p>";
 }
 
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString() : "—";
+}
+
+async function loadOverview() {
+  const data = await api("/api/admin/overview");
+  $("#overviewCustomers").textContent = data.summary.customers;
+  $("#overviewOrders").textContent = data.summary.orders;
+  $("#overviewOrderValue").textContent = money(data.summary.order_value_php);
+  $("#overviewLowStock").textContent = data.summary.low_stock;
+  $("#overviewCustomerRows").innerHTML = data.customers.length ? data.customers.map((customer) => `
+    <tr>
+      <td>${escapeHtml(customer.name)}</td>
+      <td>${escapeHtml(customer.email)}</td>
+      <td>${escapeHtml(customer.phone)}</td>
+      <td>${escapeHtml(customer.delivery_address)}</td>
+      <td>${formatDate(customer.joined)}</td>
+    </tr>`).join("") : '<tr><td colspan="5">No customer accounts yet.</td></tr>';
+  $("#overviewOrderRows").innerHTML = data.recentOrders.length ? data.recentOrders.map((order) => {
+    const items = (order.items ?? []).map((item) => `${item.product_name} × ${item.quantity}`).join(", ");
+    const delivery = [order.customer_phone,order.delivery_address].filter(Boolean).join(" · ");
+    return `<tr>
+      <td>${escapeHtml(order.tracking_number)}<span>${money(order.total_php)} · ${escapeHtml(formatDate(order.created_at))}</span></td>
+      <td>${escapeHtml(order.customer_name)}<span>${escapeHtml(order.customer_email)}</span></td>
+      <td>${escapeHtml(items || "No item detail")}</td>
+      <td>${escapeHtml(delivery || "Not provided")}</td>
+      <td>${escapeHtml(order.payment_method)}<span>${escapeHtml(order.payment_status)} · not charged</span></td>
+      <td>${escapeHtml(order.coupon)}</td>
+    </tr>`;
+  }).join("") : '<tr><td colspan="6">No orders yet.</td></tr>';
+  $("#overviewLowStockRows").innerHTML = data.lowStock.length ? data.lowStock.map((product) => `
+    <tr><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.brand)}</td><td>${product.stock}</td></tr>`
+  ).join("") : '<tr><td colspan="3">All active products have healthy stock.</td></tr>';
+  $("#adminUpdated").textContent = `Live · updated ${new Date().toLocaleTimeString()}`;
+}
+
+async function loadFeedback() {
+  const feedback = await api("/api/admin/feedback");
+  $("#adminFeedback").innerHTML = feedback.length ? feedback.map((entry) => `
+    <article class="feedback-card">
+      <div><strong>${escapeHtml(entry.customer_name || entry.email || "Customer")}</strong><span>${escapeHtml(entry.email || "")} · ${formatDate(entry.created_at)}</span></div>
+      <span class="feedback-rating" aria-label="${entry.rating} out of 5 stars">${"★".repeat(entry.rating)}${"☆".repeat(5 - entry.rating)}</span>
+      <p>${escapeHtml(entry.message)}</p>
+    </article>`).join("") : "<p>No client feedback has been submitted yet.</p>";
+}
+
+function renderTransactions() {
+    const selectedStatus = $("#transactionStatusFilter").value;
+    const filtered = transactionRows.filter((transaction) =>
+      selectedStatus === "all" || transaction.status === selectedStatus
+    );
+    $("#adminTransactions").innerHTML = filtered.length ? filtered.map((transaction) => `
+      <tr>
+        <td><strong>${escapeHtml(transaction.tracking_number)}</strong><span>${formatDate(transaction.created_at)}</span></td>
+        <td>${escapeHtml(transaction.customer_name || "Customer")}<span>${escapeHtml(transaction.email || "")} · ${escapeHtml(transaction.customer_phone || "—")}</span></td>
+        <td>${escapeHtml(transaction.delivery_address || "Not provided")}</td>
+        <td>${money(transaction.amount_php)}</td>
+        <td>${escapeHtml(transaction.payment_method)}</td>
+        <td>${escapeHtml(paymentStatusLabels[transaction.status] ?? transaction.status)}</td>
+        <td>${new Date(transaction.updated_at).toLocaleString()}</td>
+        <td><form class="transaction-status-form" data-transaction-form data-transaction-id="${escapeHtml(transaction.id)}">
+          <select name="status" aria-label="Status for ${escapeHtml(transaction.tracking_number)}">
+            ${Object.entries(paymentStatusLabels).map(([value,label]) =>
+              `<option value="${value}"${transaction.status === value ? " selected" : ""}>${escapeHtml(label)}</option>`
+            ).join("")}
+          </select>
+          <button class="edit-product" type="submit">Save status</button>
+        </form></td>
+      </tr>      `).join("") : '<tr><td colspan="8">No transactions match this status.</td></tr>';
+}
+
+async function loadTransactions() {
+    transactionRows = await api("/api/admin/transactions");
+    renderTransactions();
+}
+
 function setTab(tabName) {
   document.querySelectorAll(".admin-tab").forEach((tab) => tab.classList.toggle("active",tab.dataset.adminTab === tabName));
+  $("#overviewPanel").hidden = tabName !== "overview";
+  $("#feedbackPanel").hidden = tabName !== "feedback";
+  $("#transactionsPanel").hidden = tabName !== "transactions";
   $("#productsPanel").hidden = tabName !== "products";
   $("#ordersPanel").hidden = tabName !== "orders";
+  $("#usersPanel").hidden = tabName !== "users";
 }
 
 async function enterDashboard() {
   await api("/api/admin/me");
   $("#adminLogin").hidden = true;
   $("#adminDashboard").hidden = false;
+  await loadOverview();
+  await loadFeedback();
+  await loadTransactions();
   await loadProducts();
   await loadOrders();
 }
@@ -127,26 +221,33 @@ async function initialize() {
 
 $("#adminLoginForm").addEventListener("submit",async (event) => {
   event.preventDefault();
-  $("#adminLoginMessage").textContent = "";
+  const form = event.currentTarget;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const message = $("#adminLoginMessage");
+  message.textContent = "";
   if (!client) {
-    $("#adminLoginMessage").textContent = "Supabase is not configured. Start the server and verify .env.";
+    message.textContent = "Supabase is not configured. Add your project URL and publishable/anon key to the local .env file, then restart the server.";
     return;
   }
-  const {data,error} = await client.auth.signInWithPassword({
-    email:$("#adminEmail").value.trim(),
-    password:$("#adminPassword").value
-  });
-  if (error) {
-    $("#adminLoginMessage").textContent = error.message;
-    return;
-  }
-  sessionToken = data.session.access_token;
+  submitButton.disabled = true;
   try {
+    const {data,error} = await client.auth.signInWithPassword({
+      email:$("#adminEmail").value.trim(),
+      password:$("#adminPassword").value
+    });
+    if (error) throw error;
+    if (!data.session?.access_token) throw new Error("Supabase did not return a signed-in session.");
+    sessionToken = data.session.access_token;
     await enterDashboard();
   } catch (accessError) {
-    await client.auth.signOut();
+    if (sessionToken) {
+      const {error:signOutError} = await client.auth.signOut();
+      if (signOutError) message.textContent = `${accessError.message} Sign-out also failed: ${signOutError.message}`;
+    }
     sessionToken = null;
-    $("#adminLoginMessage").textContent = accessError.message;
+    if (!message.textContent) message.textContent = accessError.message;
+  } finally {
+    submitButton.disabled = false;
   }
 });
 
@@ -170,6 +271,27 @@ $("#newProductButton").addEventListener("click",() => {
 });
 
 $("#cancelProduct").addEventListener("click",resetProductForm);
+
+$("#userRoleForm").addEventListener("submit",async (event) => {
+  event.preventDefault();
+  const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+  const message = $("#userRoleMessage");
+  message.textContent = "";
+  submitButton.disabled = true;
+  try {
+    const result = await api("/api/admin/users/role",{
+      method:"POST",
+      body:JSON.stringify({email:$("#roleEmail").value.trim(),role:$("#roleValue").value})
+    });
+    message.textContent = `${result.email} now has ${result.role} access.`;
+    event.currentTarget.reset();
+    $("#roleValue").value = "admin";
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 
 $("#adminProducts").addEventListener("click",(event) => {
   const button = event.target.closest("[data-edit]");
@@ -230,6 +352,31 @@ $("#adminOrders").addEventListener("submit",async (event) => {
   }
 });
 
+$("#adminTransactions").addEventListener("submit",async (event) => {
+  const form = event.target.closest("[data-transaction-form]");
+  if (!form) return;
+  event.preventDefault();
+  const button = form.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const data = new FormData(form);
+    await api(`/api/admin/transactions/${encodeURIComponent(form.dataset.transactionId)}/status`,{
+      method:"PATCH",
+      body:JSON.stringify({status:data.get("status")})
+    });
+    await loadTransactions();
+    toast("Transaction status saved. It is not verified by a payment provider.");
+  } catch (error) {
+    showMessage(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("#transactionStatusFilter").addEventListener("change",renderTransactions);
 $("#refreshOrders").addEventListener("click",() => loadOrders().catch((error) => showMessage(error.message)));
+$("#refreshOverview").addEventListener("click",() => loadOverview().catch((error) => showMessage(error.message)));
+$("#refreshFeedback").addEventListener("click",() => loadFeedback().catch((error) => showMessage(error.message)));
+$("#refreshTransactions").addEventListener("click",() => loadTransactions().catch((error) => showMessage(error.message)));
 
 initialize();

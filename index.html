@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="desktop.css">
+    <link rel="stylesheet" href="checkout.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="catalog.js?v=20261105-lining-a300-photo" defer></script>
     <script src="app.js" defer></script>
@@ -123,7 +124,7 @@
 
     <footer class="site-footer">
       <a class="brand footer-brand" href="#"><img class="brand-logo" src="logo.svg" alt=""><span>CADAY<span class="brand-light">BADMINTON</span></span></a>
-      <span>Badminton gear from Pinamaloy, Don Carlos, Bukidnon.</span><a class="admin-link" href="/admin.html">Shop admin</a><span>© 2026 Caday Badminton</span><a href="#shop">Back to top ↑</a>
+      <span>Badminton gear from Pinamaloy, Don Carlos, Bukidnon.</span><button class="text-button" id="feedbackButton" type="button">Leave feedback</button><a class="admin-link" href="/admin.html">Shop admin</a><span>© 2026 Caday Badminton</span><a href="#shop">Back to top ↑</a>
     </footer>
 
     <div class="overlay" id="overlay" hidden></div>
@@ -145,13 +146,32 @@
       <h2 id="authTitle">Good to have<br><span>you here.</span></h2>
       <p class="modal-intro" id="authDescription">Sign in or create an account to keep your gear and orders together.</p>
       <div class="auth-tabs"><button class="auth-tab active" data-auth-mode="login">Sign in</button><button class="auth-tab" data-auth-mode="signup">Create account</button></div>
+      <a class="auth-admin-link" href="/admin.html">Administrator? Go to admin sign in <span>→</span></a>
       <form id="authForm">
+        <div id="authNameField" hidden><label for="authName">Full name</label><input id="authName" type="text" autocomplete="name" maxlength="120"></div>
         <label for="authEmail">Email address</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
         <div id="passwordField"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></div>
         <button class="forgot-link" type="button" id="forgotButton">Forgot password?</button>
         <button class="button button-dark modal-submit" type="submit" id="authSubmit">Sign in <span>→</span></button>
       </form>
-      <p class="demo-disclaimer">Without server configuration, this form runs a local demo and does not create an account.</p>
+      <p id="authMessage" class="auth-message" role="status" aria-live="polite"></p>
+      <p class="demo-disclaimer">Sign-in requires your Supabase project configuration.</p>
+    </section>
+
+    <section class="modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CADAY ACCOUNT</div>
+      <h2 id="profileTitle">Client <span>profile.</span></h2>
+      <p class="modal-intro">Edit your contact and delivery details. Your email is managed by your sign-in provider.</p>
+      <form id="profileForm" class="profile-form">
+        <label for="profileEmail">Account email</label><input id="profileEmail" type="email" readonly>
+        <label for="profileName">Full name</label><input id="profileName" type="text" autocomplete="name" maxlength="120" required>
+        <label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" autocomplete="tel" maxlength="40">
+        <label for="profileAddress">Delivery address</label><textarea id="profileAddress" autocomplete="street-address" maxlength="500" rows="3"></textarea>
+        <button class="button button-dark modal-submit" id="saveProfileButton" type="submit">Save profile <span>→</span></button>
+      </form>
+      <p id="profileMessage" class="auth-message" role="status" aria-live="polite"></p>
+      <button class="text-button profile-signout" id="profileSignOut" type="button">Sign out</button>
     </section>
 
     <section class="modal checkout-modal" id="checkoutModal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" hidden>
@@ -161,6 +181,9 @@
       <p class="modal-intro">Choose a demo payment method. No payment details or money are collected.</p>
       <form id="checkoutForm">
         <label for="checkoutEmail">Email for your order summary</label><input id="checkoutEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label for="checkoutName">Recipient name</label><input id="checkoutName" type="text" autocomplete="name" maxlength="120" required>
+        <label for="checkoutPhone">Phone number</label><input id="checkoutPhone" type="tel" autocomplete="tel" maxlength="40" required>
+        <label for="checkoutAddress">Delivery address</label><textarea id="checkoutAddress" autocomplete="street-address" maxlength="500" required></textarea>
         <fieldset><legend>Payment method</legend>
           <label class="payment-option"><input type="radio" name="payment" value="card" checked><span><strong>Credit or debit card</strong><small>Demo selection only — no card details requested</small></span><i>▤</i></label>
           <label class="payment-option"><input type="radio" name="payment" value="paypal"><span><strong>PayPal</strong><small>Demo selection only — no PayPal connection</small></span><i>P</i></label>
@@ -202,6 +225,20 @@
       </form>
       <div id="trackingResult" class="tracking-result" aria-live="polite"></div>
       <p class="demo-disclaimer">Demo tracking only. Connect Supabase and a delivery carrier for live shipment events.</p>
+    </section>
+
+    <section class="modal" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" hidden>
+      <button class="close-button modal-close" data-close aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-line"></span> YOUR EXPERIENCE</div>
+      <h2 id="feedbackTitle">Tell us what<br><span>you think.</span></h2>
+      <p class="modal-intro">Share feedback with Caday Badminton. Sign in to submit.</p>
+      <form id="feedbackForm">
+        <label for="feedbackRating">Rating</label>
+        <select id="feedbackRating" required><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Could be better</option><option value="1">1 · Poor</option></select>
+        <label for="feedbackMessage">Your feedback</label>
+        <textarea id="feedbackMessage" maxlength="2000" rows="5" required></textarea>
+        <button class="button button-dark modal-submit" type="submit">Send feedback <span>→</span></button>
+      </form>
     </section>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

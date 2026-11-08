@@ -31,9 +31,15 @@ create table if not exists public.orders (
   payment_method text not null
     check (payment_method in ('card', 'paypal', 'cash')),
   total_php integer not null check (total_php > 0),
+  customer_name text,
+  customer_phone text,
+  delivery_address text,
   origin text not null default 'Pinamaloy, Don Carlos, Bukidnon',
   created_at timestamptz not null default now()
 );
+alter table public.orders add column if not exists customer_name text;
+alter table public.orders add column if not exists customer_phone text;
+alter table public.orders add column if not exists delivery_address text;
 
 create table if not exists public.order_items (
   id bigint generated always as identity primary key,
@@ -46,11 +52,73 @@ create table if not exists public.order_items (
 );
 alter table public.order_items add column if not exists configuration jsonb not null default '{}'::jsonb;
 
+create table if not exists public.payment_transactions (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null unique references public.orders(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  payment_method text not null check (payment_method in ('card', 'paypal', 'cash')),
+  amount_php integer not null check (amount_php > 0),
+  status text not null default 'not_processed'
+    check (status in ('not_processed', 'pending', 'processing', 'succeeded', 'failed', 'refunded')),
+  provider text,
+  provider_transaction_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+insert into public.payment_transactions (order_id, user_id, payment_method, amount_php)
+select id, user_id, payment_method, total_php
+from public.orders
+on conflict (order_id) do nothing;
+
+create table if not exists public.coupons (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  discount_type text not null check (discount_type in ('percentage', 'fixed')),
+  discount_value integer not null check (discount_value > 0),
+  active boolean not null default true,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  max_redemptions integer check (max_redemptions is null or max_redemptions > 0),
+  created_at timestamptz not null default now(),
+  check (expires_at is null or starts_at is null or expires_at > starts_at),
+  check (discount_type <> 'percentage' or discount_value <= 100)
+);
+
+create table if not exists public.coupon_redemptions (
+  id uuid primary key default gen_random_uuid(),
+  coupon_id uuid not null references public.coupons(id),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  order_id uuid not null unique references public.orders(id) on delete cascade,
+  discount_php integer not null check (discount_php > 0),
+  redeemed_at timestamptz not null default now(),
+  unique (coupon_id, user_id, order_id)
+);
+
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  order_id uuid references public.orders(id) on delete set null,
+  rating integer not null check (rating between 1 and 5),
+  message text not null check (length(btrim(message)) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   role text not null default 'customer' check (role in ('customer', 'admin')),
+  full_name text not null default '',
+  phone text not null default '',
+  delivery_address text not null default '',
   created_at timestamptz not null default now()
 );
+alter table public.profiles add column if not exists full_name text not null default '';
+alter table public.profiles add column if not exists phone text not null default '';
+alter table public.profiles add column if not exists delivery_address text not null default '';
+
+update public.profiles p
+set full_name = coalesce(nullif(p.full_name,''), u.raw_user_meta_data->>'full_name', '')
+from auth.users u
+where u.id = p.user_id and p.full_name = '';
 
 alter table public.profiles enable row level security;
 drop policy if exists "Users can read their own profile" on public.profiles;
@@ -67,8 +135,8 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.profiles (user_id)
-  values (new.id)
+  insert into public.profiles (user_id, full_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name',''))
   on conflict (user_id) do nothing;
   return new;
 end;
@@ -177,6 +245,10 @@ alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.tracking_events enable row level security;
+alter table public.payment_transactions enable row level security;
+alter table public.coupons enable row level security;
+alter table public.coupon_redemptions enable row level security;
+alter table public.feedback enable row level security;
 
 drop policy if exists "Anyone can view active badminton products" on public.products;
 create policy "Anyone can view active badminton products"
@@ -204,9 +276,40 @@ create policy "Customers can view tracking for their own orders"
     where orders.id = tracking_events.order_id and orders.user_id = auth.uid()
   ));
 
+drop policy if exists "Customers can view their own payment transactions" on public.payment_transactions;
+create policy "Customers can view their own payment transactions"
+  on public.payment_transactions for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Anyone can view active coupons" on public.coupons;
+create policy "Anyone can view active coupons"
+  on public.coupons for select
+  using (active = true and (starts_at is null or starts_at <= now()) and (expires_at is null or expires_at > now()));
+
+drop policy if exists "Customers can view their own coupon redemptions" on public.coupon_redemptions;
+create policy "Customers can view their own coupon redemptions"
+  on public.coupon_redemptions for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Customers can submit feedback" on public.feedback;
+create policy "Customers can submit feedback"
+  on public.feedback for insert
+  with check (auth.uid() = user_id and (order_id is null or exists (
+    select 1 from public.orders where orders.id = feedback.order_id and orders.user_id = auth.uid()
+  )));
+
+drop policy if exists "Customers can view their own feedback" on public.feedback;
+create policy "Customers can view their own feedback"
+  on public.feedback for select
+  using (auth.uid() = user_id);
+
 grant select on public.products to anon, authenticated;
+grant select on public.coupons to anon;
 grant select on public.orders, public.order_items, public.tracking_events to authenticated;
-grant all on public.products, public.orders, public.order_items, public.tracking_events, public.profiles to service_role;
+grant select on public.payment_transactions, public.coupons, public.coupon_redemptions, public.feedback to authenticated;
+grant insert on public.feedback to authenticated;
+grant all on public.products, public.orders, public.order_items, public.tracking_events, public.profiles,
+  public.payment_transactions, public.coupons, public.coupon_redemptions, public.feedback to service_role;
 grant usage, select on all sequences in schema public to service_role;
 
 create or replace function public.place_order(
@@ -302,6 +405,9 @@ begin
 
   insert into public.orders (id, user_id, tracking_number, payment_method, total_php)
   values (v_order_id, v_user_id, v_tracking_number, p_payment_method, v_total);
+
+  insert into public.payment_transactions (order_id, user_id, payment_method, amount_php)
+  values (v_order_id, v_user_id, p_payment_method, v_total);
 
   for v_item in
     select item.product_id, item.configuration, sum(item.quantity)::integer as quantity

@@ -29,9 +29,49 @@
         <p id="adminLoginMessage" role="status"></p>
       </section>
       <section id="adminDashboard" hidden>
-        <div class="admin-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> CADAY BADMINTON</div><h1>Shop <span>dashboard.</span></h1></div><button id="adminSignOut" class="button button-outline" type="button">Sign out</button></div>
-        <div class="admin-tabs"><button type="button" class="admin-tab active" data-admin-tab="products">Products & stock</button><button type="button" class="admin-tab" data-admin-tab="orders">Orders & tracking</button></div>
-        <section id="productsPanel">
+        <div class="admin-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> SYSTEM ADMINISTRATOR</div><h1>Store <span>monitoring.</span></h1><p id="adminUpdated">Live · loading store data</p></div><div class="admin-heading-actions"><button id="refreshOverview" class="button button-outline" type="button">Refresh now ↻</button><button id="adminSignOut" class="button button-outline" type="button">Sign out</button></div></div>
+        <div class="admin-tabs"><button type="button" class="admin-tab active" data-admin-tab="overview">Overview</button><button type="button" class="admin-tab" data-admin-tab="transactions">Transactions</button><button type="button" class="admin-tab" data-admin-tab="feedback">Client feedback</button><button type="button" class="admin-tab" data-admin-tab="products">Products & stock</button><button type="button" class="admin-tab" data-admin-tab="orders">Orders & tracking</button><button type="button" class="admin-tab" data-admin-tab="users">User access</button></div>
+        <section id="overviewPanel">
+          <div class="monitoring-metrics">
+            <article><span>Customers</span><strong id="overviewCustomers">—</strong></article>
+            <article><span>Orders</span><strong id="overviewOrders">—</strong></article>
+            <article><span>Order value</span><strong id="overviewOrderValue">—</strong><small>Orders are recorded; payments are not processed.</small></article>
+            <article><span>Low stock</span><strong id="overviewLowStock">—</strong></article>
+          </div>
+          <section class="monitoring-section">
+            <h2>Customers</h2>
+            <div class="admin-table-wrap"><table class="admin-table monitoring-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Delivery address</th><th>Joined</th></tr></thead><tbody id="overviewCustomerRows"></tbody></table></div>
+          </section>
+          <section class="monitoring-section">
+            <h2>Recent orders</h2>
+            <div class="admin-table-wrap"><table class="admin-table monitoring-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Delivery</th><th>Payment</th><th>Coupon</th></tr></thead><tbody id="overviewOrderRows"></tbody></table></div>
+          </section>
+          <section class="monitoring-section">
+            <h2>Low stock <span class="monitoring-note">5 or fewer units</span></h2>
+            <div class="admin-table-wrap"><table class="admin-table monitoring-table"><thead><tr><th>Product</th><th>Brand</th><th>Stock</th></tr></thead><tbody id="overviewLowStockRows"></tbody></table></div>
+          </section>
+        </section>
+        <section id="feedbackPanel" hidden>
+          <div class="panel-heading"><div><h2>Client feedback</h2><p>Customer feedback received by the store.</p></div><button class="button button-outline" id="refreshFeedback" type="button">Refresh feedback ↻</button></div>
+          <div id="adminFeedback" class="admin-feedback"></div>
+        </section>
+        <section id="transactionsPanel" hidden>
+          <div class="panel-heading"><div><h2>Payment transactions</h2><p>Review and manually update the status recorded for each order.</p></div><button class="button button-outline" id="refreshTransactions" type="button">Refresh transactions ↻</button></div>
+          <p class="transaction-warning">Manual statuses are not verified by a payment provider. This website does not collect payments or confirm that funds were received.</p>
+          <label class="transaction-filter" for="transactionStatusFilter">Filter by status
+            <select id="transactionStatusFilter">
+              <option value="all">All statuses</option>
+              <option value="not_processed">Not processed</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="succeeded">Succeeded (manual)</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded (manual)</option>
+            </select>
+          </label>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Delivery</th><th>Amount</th><th>Payment method</th><th>Status</th><th>Updated</th><th>Manage</th></tr></thead><tbody id="adminTransactions"></tbody></table></div>
+        </section>
+        <section id="productsPanel" hidden>
           <div class="panel-heading"><div><h2>Products & inventory</h2><p>Update product details, pricing, availability, and stock.</p></div><button class="button button-dark" id="newProductButton" type="button">Add product <span>+</span></button></div>
           <form id="productForm" class="product-form" hidden>
             <h3 id="productFormTitle">Add product</h3>
@@ -53,6 +93,18 @@
         <section id="ordersPanel" hidden>
           <div class="panel-heading"><div><h2>Orders & tracking</h2><p>Add shipment updates from the shop or carrier.</p></div><button class="button button-outline" id="refreshOrders" type="button">Refresh orders ↻</button></div>
           <div id="adminOrders" class="admin-orders"></div>
+        </section>
+        <section id="usersPanel" hidden>
+          <div class="panel-heading"><div><h2>User access</h2><p>Grant administrator access to an existing Supabase account or return it to customer access.</p></div></div>
+          <form id="userRoleForm" class="product-form user-role-form">
+            <div class="admin-form-grid">
+              <label>Email address<input id="roleEmail" type="email" autocomplete="email" placeholder="user@example.com" required></label>
+              <label>Access level<select id="roleValue" required><option value="admin">Administrator</option><option value="customer">Customer</option></select></label>
+            </div>
+            <div class="form-actions"><button class="button button-dark" type="submit">Save access <span>→</span></button></div>
+            <p class="user-role-note">The account must already exist in Supabase Authentication. This form never creates accounts or changes passwords.</p>
+            <p id="userRoleMessage" role="status" aria-live="polite"></p>
+          </form>
         </section>
         <p id="adminMessage" role="status" aria-live="polite"></p>
       </section>
